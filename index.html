@@ -84,6 +84,16 @@
 
     <section class="card">
       <div class="card-header">
+        <h2>Anstehende Zahlungen</h2>
+        <p>Zum Beispiel PayPal 30 Tage spaeter, Klarna oder andere Betraege mit spaeterem Faelligkeitsdatum.</p>
+      </div>
+
+      <div id="upcomingPaymentList" class="entry-list"></div>
+      <button id="addUpcomingPaymentBtn" class="secondary-btn" type="button">+ Anstehende Zahlung hinzufuegen</button>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
         <h2>Sicherung</h2>
         <p>Speichere deinen aktuellen Stand als Datei oder stelle ihn spaeter wieder her.</p>
       </div>
@@ -145,6 +155,25 @@
           </article>
         </div>
         <p id="stabilityHint" class="hint"></p>
+      </div>
+
+      <div class="upcoming-panel">
+        <h3>Faellige Sonderzahlungen</h3>
+        <div class="stability-grid">
+          <article class="stability-block">
+            <span>Offen insgesamt</span>
+            <strong id="openUpcomingTotal">0,00 EUR</strong>
+          </article>
+          <article class="stability-block">
+            <span>Faellig in 30 Tagen</span>
+            <strong id="dueSoonTotal">0,00 EUR</strong>
+          </article>
+          <article class="stability-block">
+            <span>Stand nach faelligen Zahlungen</span>
+            <strong id="projectedAfterUpcoming">0,00 EUR</strong>
+          </article>
+        </div>
+        <p id="upcomingHint" class="hint"></p>
       </div>
 
       <div class="food-budget">
@@ -211,6 +240,28 @@
       <strong data-role="allocation-value">0,00 EUR</strong>
       <small data-role="allocation-percent">0 %</small>
     </article>
+  </template>
+
+  <template id="upcomingPaymentTemplate">
+    <div class="upcoming-row">
+      <label class="field">
+        <span>Bezeichnung</span>
+        <input type="text" data-role="label" placeholder="z. B. PayPal Bestellung">
+      </label>
+      <label class="field amount-field">
+        <span>Betrag in EUR</span>
+        <input type="number" data-role="amount" min="0" step="0.01" placeholder="0,00">
+      </label>
+      <label class="field">
+        <span>Faellig am</span>
+        <input type="date" data-role="due-date">
+      </label>
+      <label class="check-field">
+        <input type="checkbox" data-role="paid">
+        <span>Bezahlt</span>
+      </label>
+      <button class="remove-btn" data-role="remove" type="button" aria-label="Eintrag entfernen">Entfernen</button>
+    </div>
   </template>
 
   <script src="app.js"></script>
