@@ -82,6 +82,21 @@
       <div id="categoryList" class="category-list"></div>
     </section>
 
+    <section class="card">
+      <div class="card-header">
+        <h2>Sicherung</h2>
+        <p>Speichere deinen aktuellen Stand als Datei oder stelle ihn spaeter wieder her.</p>
+      </div>
+
+      <div class="backup-actions">
+        <button id="exportBtn" class="secondary-btn" type="button">Backup exportieren</button>
+        <label class="secondary-btn upload-btn" for="importFile">Backup importieren</label>
+        <input id="importFile" type="file" accept="application/json" hidden>
+      </div>
+      <p id="backupStatus" class="backup-status"></p>
+      <p id="backupHint" class="hint"></p>
+    </section>
+
     <section class="card summary-card">
       <div class="card-header">
         <h2>Dein Plan</h2>
