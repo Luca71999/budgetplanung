@@ -108,11 +108,19 @@ body::before {
   color: var(--accent);
 }
 
+.backup-status {
+  margin: 16px 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .field-grid,
 .summary-grid,
 .food-grid,
 .allocation-grid,
-.category-list {
+.category-list,
+.backup-actions {
   display: grid;
   gap: 14px;
 }
@@ -208,6 +216,13 @@ body::before {
   background: var(--accent-soft);
   color: var(--accent);
   font-weight: 700;
+}
+
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .remove-btn {
