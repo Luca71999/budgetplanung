@@ -318,6 +318,8 @@ function renderSummary() {
   const displayName = state.personName.trim();
   const displayMonth = state.monthName.trim();
   const totalCategoryPercent = state.categories.reduce((sum, category) => sum + sanitizeAmount(category.percent), 0);
+  const unplannedPercent = Math.max(0, 100 - totalCategoryPercent);
+  const overplannedPercent = Math.max(0, totalCategoryPercent - 100);
 
   totalIncomeOutput.textContent = formatCurrency(totalIncome);
   totalExpensesOutput.textContent = formatCurrency(totalExpenses);
@@ -344,9 +346,9 @@ function renderSummary() {
   if (totalCategoryPercent === 100) {
     allocationHintOutput.textContent = "Deine Kategorien sind sauber auf 100 % verteilt.";
   } else if (totalCategoryPercent < 100) {
-    allocationHintOutput.textContent = "Aktuell sind nur " + totalCategoryPercent + " % verteilt. Ein Teil deines Restbudgets ist noch offen.";
+    allocationHintOutput.textContent = "Aktuell sind nur " + totalCategoryPercent + " % verteilt. Die fehlenden " + unplannedPercent + " % laufen unten als Ungeplant / Puffer mit.";
   } else {
-    allocationHintOutput.textContent = "Aktuell sind " + totalCategoryPercent + " % verteilt. Das ist mehr als dein verfuegbares Restbudget.";
+    allocationHintOutput.textContent = "Aktuell sind " + totalCategoryPercent + " % verteilt. Das sind " + overplannedPercent + " % mehr als dein verfuegbares Restbudget.";
   }
 
   if (currentBalance < 0 && remainingBudget > 0) {
@@ -377,6 +379,8 @@ function createPersonalMessage(name, month, remainingBudget) {
 
 function renderAllocationGrid(availableBudget) {
   allocationGrid.innerHTML = "";
+  const totalCategoryPercent = state.categories.reduce((sum, category) => sum + sanitizeAmount(category.percent), 0);
+  const unplannedPercent = Math.max(0, 100 - totalCategoryPercent);
 
   state.categories.forEach((category) => {
     const fragment = allocationTemplate.content.cloneNode(true);
@@ -391,6 +395,21 @@ function renderAllocationGrid(availableBudget) {
     percentOutput.textContent = percent + " %";
     allocationGrid.appendChild(fragment);
   });
+
+  if (unplannedPercent > 0) {
+    const fragment = allocationTemplate.content.cloneNode(true);
+    const card = fragment.querySelector(".allocation-card");
+    const nameOutput = fragment.querySelector('[data-role="allocation-name"]');
+    const valueOutput = fragment.querySelector('[data-role="allocation-value"]');
+    const percentOutput = fragment.querySelector('[data-role="allocation-percent"]');
+    const monthlyBudget = availableBudget * (unplannedPercent / 100);
+
+    card.classList.add("allocation-card-buffer");
+    nameOutput.textContent = "Ungeplant / Puffer";
+    valueOutput.textContent = formatCurrency(monthlyBudget);
+    percentOutput.textContent = unplannedPercent + " %";
+    allocationGrid.appendChild(fragment);
+  }
 }
 
 function renderBackupStatus() {
