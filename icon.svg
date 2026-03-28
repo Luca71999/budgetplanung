@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Budgetplanung Icon">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e" />
+      <stop offset="100%" stop-color="#15968c" />
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bg)" />
+  <rect x="48" y="50" width="160" height="156" rx="24" fill="#fffdf7" opacity="0.94" />
+  <rect x="68" y="84" width="90" height="14" rx="7" fill="#d9f2ef" />
+  <rect x="68" y="112" width="120" height="14" rx="7" fill="#d9f2ef" />
+  <rect x="68" y="140" width="72" height="14" rx="7" fill="#d9f2ef" />
+  <path d="M164 170c18 0 32-14 32-32s-14-32-32-32-32 14-32 32 14 32 32 32Z" fill="#0f766e" />
+  <path d="M164 120c-7 0-12 4-12 10 0 5 4 8 11 10 6 1 7 3 7 5 0 3-3 5-7 5-4 0-8-2-11-4l-5 10c4 3 8 5 13 6v8h9v-8c8-2 13-8 13-15 0-8-4-12-13-14-5-1-7-2-7-5 0-2 2-4 6-4 4 0 7 1 9 3l5-10c-3-2-6-4-10-5v-7h-9v7Z" fill="#fffdf7" />
+</svg>

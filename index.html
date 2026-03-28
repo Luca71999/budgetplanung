@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f3efe4">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Budgetplanung">
+  <title>Budgetplanung</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="hero">
+      <p class="eyebrow">Monatlicher Budgetplan</p>
+      <h1>Dein Budget auf einen Blick</h1>
+      <p class="intro">
+        Trage deine festen Einnahmen und Ausgaben ein. Die App zeigt dir, was dir fuer variable Dinge
+        wie Essen im Monat, pro Woche und pro Tag bleibt.
+      </p>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Monat, Kontostand & Reserve</h2>
+        <p>Hier legst du die Basis fuer deinen Plan und deine finanzielle Stabilisierung fest.</p>
+      </div>
+
+      <div class="field-grid">
+        <label class="field">
+          <span>Dein Name</span>
+          <input id="personName" type="text" placeholder="z. B. Luca">
+        </label>
+
+        <label class="field">
+          <span>Monat</span>
+          <input id="monthName" type="text" placeholder="z. B. April 2026">
+        </label>
+
+        <label class="field">
+          <span>Aktueller Kontostand in EUR</span>
+          <input id="currentBalance" type="number" step="0.01" placeholder="z. B. -850">
+        </label>
+
+        <label class="field">
+          <span>Sicherheitsreserve in %</span>
+          <input id="bufferPercent" type="number" min="0" max="100" step="1" placeholder="10">
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Feste Einnahmen</h2>
+        <p>Zum Beispiel Gehalt, Kindergeld oder Nebenjob.</p>
+      </div>
+
+      <div id="incomeList" class="entry-list"></div>
+      <button id="addIncomeBtn" class="secondary-btn" type="button">+ Einnahme hinzufuegen</button>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Feste Ausgaben</h2>
+        <p>Zum Beispiel Miete, Strom, Versicherungen oder Abos.</p>
+      </div>
+
+      <div id="expenseList" class="entry-list"></div>
+      <button id="addExpenseBtn" class="secondary-btn" type="button">+ Ausgabe hinzufuegen</button>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2>Variable Kategorien</h2>
+        <p>So teilst du dein frei verfuegbares Budget auf Essen, Alltag, Freizeit und Sparen auf.</p>
+      </div>
+
+      <div id="categoryList" class="category-list"></div>
+    </section>
+
+    <section class="card summary-card">
+      <div class="card-header">
+        <h2>Dein Plan</h2>
+        <p>Die Werte aktualisieren sich sofort waehrend der Eingabe.</p>
+      </div>
+
+      <p id="personalMessage" class="personal-message"></p>
+
+      <div class="summary-grid">
+        <article class="summary-block summary-highlight">
+          <span>Gesamte Einnahmen</span>
+          <strong id="totalIncome">0,00 EUR</strong>
+        </article>
+        <article class="summary-block">
+          <span>Feste Ausgaben</span>
+          <strong id="totalExpenses">0,00 EUR</strong>
+        </article>
+        <article class="summary-block">
+          <span>Reserve</span>
+          <strong id="bufferAmount">0,00 EUR</strong>
+        </article>
+        <article class="summary-block">
+          <span>Frei verfuegbar</span>
+          <strong id="remainingBudget">0,00 EUR</strong>
+        </article>
+        <article class="summary-block">
+          <span>Aktueller Kontostand</span>
+          <strong id="balanceNow">0,00 EUR</strong>
+        </article>
+        <article class="summary-block">
+          <span>Geschaetzter Stand Monatsende</span>
+          <strong id="projectedBalance">0,00 EUR</strong>
+        </article>
+      </div>
+
+      <div class="stability-panel">
+        <h3>Schritt fuer Schritt stabilisieren</h3>
+        <div class="stability-grid">
+          <article class="stability-block">
+            <span>Abbau dieses Monats</span>
+            <strong id="debtReduction">0,00 EUR</strong>
+          </article>
+          <article class="stability-block">
+            <span>Monate bis 0 EUR</span>
+            <strong id="monthsToZero">-</strong>
+          </article>
+        </div>
+        <p id="stabilityHint" class="hint"></p>
+      </div>
+
+      <div class="food-budget">
+        <h3>Orientierung fuer Essen und benoetigte Dinge</h3>
+        <div class="food-grid">
+          <article class="food-block">
+            <span>Pro Monat</span>
+            <strong id="foodMonthly">0,00 EUR</strong>
+          </article>
+          <article class="food-block">
+            <span>Pro Woche</span>
+            <strong id="foodWeekly">0,00 EUR</strong>
+          </article>
+          <article class="food-block">
+            <span>Pro Tag</span>
+            <strong id="foodDaily">0,00 EUR</strong>
+          </article>
+        </div>
+        <p id="budgetHint" class="hint"></p>
+      </div>
+
+      <div class="allocation-budget">
+        <h3>Aufteilung deines Restbudgets</h3>
+        <div id="allocationGrid" class="allocation-grid"></div>
+        <p id="allocationHint" class="hint"></p>
+      </div>
+    </section>
+  </main>
+
+  <template id="entryTemplate">
+    <div class="entry-row">
+      <label class="field">
+        <span>Bezeichnung</span>
+        <input type="text" data-role="label" placeholder="z. B. Gehalt">
+      </label>
+      <label class="field amount-field">
+        <span>Betrag in EUR</span>
+        <input type="number" data-role="amount" min="0" step="0.01" placeholder="0,00">
+      </label>
+      <button class="remove-btn" data-role="remove" type="button" aria-label="Eintrag entfernen">Entfernen</button>
+    </div>
+  </template>
+
+  <template id="categoryTemplate">
+    <div class="category-row">
+      <div class="category-info">
+        <strong data-role="category-name">Kategorie</strong>
+        <span data-role="category-description">Beschreibung</span>
+      </div>
+      <label class="field amount-field">
+        <span>Anteil in %</span>
+        <input type="number" data-role="category-percent" min="0" max="100" step="1" placeholder="0">
+      </label>
+      <div class="category-results">
+        <span data-role="category-monthly">0,00 EUR / Monat</span>
+        <span data-role="category-daily">0,00 EUR / Tag</span>
+      </div>
+    </div>
+  </template>
+
+  <template id="allocationTemplate">
+    <article class="allocation-card">
+      <span data-role="allocation-name">Kategorie</span>
+      <strong data-role="allocation-value">0,00 EUR</strong>
+      <small data-role="allocation-percent">0 %</small>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
