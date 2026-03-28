@@ -10,6 +10,7 @@ const defaultState = {
   personName: "",
   monthName: "",
   currentBalance: 0,
+  lastBackupAt: "",
   bufferPercent: 10,
   incomes: [
     { label: "Gehalt", amount: 0 },
@@ -30,6 +31,8 @@ const expenseList = document.querySelector("#expenseList");
 const categoryList = document.querySelector("#categoryList");
 const addIncomeBtn = document.querySelector("#addIncomeBtn");
 const addExpenseBtn = document.querySelector("#addExpenseBtn");
+const exportBtn = document.querySelector("#exportBtn");
+const importFileInput = document.querySelector("#importFile");
 const entryTemplate = document.querySelector("#entryTemplate");
 const categoryTemplate = document.querySelector("#categoryTemplate");
 const allocationTemplate = document.querySelector("#allocationTemplate");
@@ -50,6 +53,8 @@ const allocationHintOutput = document.querySelector("#allocationHint");
 const debtReductionOutput = document.querySelector("#debtReduction");
 const monthsToZeroOutput = document.querySelector("#monthsToZero");
 const stabilityHintOutput = document.querySelector("#stabilityHint");
+const backupHintOutput = document.querySelector("#backupHint");
+const backupStatusOutput = document.querySelector("#backupStatus");
 
 let state = loadState();
 
@@ -65,6 +70,7 @@ function loadState() {
       personName: parsed.personName || "",
       monthName: parsed.monthName || "",
       currentBalance: Number.isFinite(Number(parsed.currentBalance)) ? Number(parsed.currentBalance) : 0,
+      lastBackupAt: parsed.lastBackupAt || "",
       bufferPercent: Number.isFinite(Number(parsed.bufferPercent)) ? Number(parsed.bufferPercent) : 10,
       incomes: Array.isArray(parsed.incomes) && parsed.incomes.length ? parsed.incomes : structuredClone(defaultState.incomes),
       expenses: Array.isArray(parsed.expenses) && parsed.expenses.length ? parsed.expenses : structuredClone(defaultState.expenses),
@@ -93,11 +99,93 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+function buildExportData() {
+  const exportedAt = new Date().toISOString();
+  return {
+    version: 1,
+    exportedAt,
+    state: {
+      ...state,
+      lastBackupAt: exportedAt,
+    },
+  };
+}
+
+function downloadBackup() {
+  const exportData = buildExportData();
+  const fileContent = JSON.stringify(exportData, null, 2);
+  const blob = new Blob([fileContent], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const safeMonth = (state.monthName || "budgetplan").trim().replace(/\s+/g, "-").toLowerCase();
+
+  link.href = url;
+  link.download = safeMonth + "-backup.json";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+
+  state.lastBackupAt = exportData.exportedAt;
+  saveState();
+  renderBackupStatus();
+  backupHintOutput.textContent = "Backup-Datei wurde erstellt. Auf dem iPhone kannst du sie in Dateien sichern.";
+}
+
+function importBackupFile(file) {
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(String(reader.result));
+      const importedState = parsed && parsed.state ? parsed.state : parsed;
+
+      state = {
+        personName: importedState.personName || "",
+        monthName: importedState.monthName || "",
+        currentBalance: Number.isFinite(Number(importedState.currentBalance)) ? Number(importedState.currentBalance) : 0,
+        lastBackupAt: importedState.lastBackupAt || parsed.exportedAt || new Date().toISOString(),
+        bufferPercent: Number.isFinite(Number(importedState.bufferPercent)) ? Number(importedState.bufferPercent) : 10,
+        incomes: Array.isArray(importedState.incomes) && importedState.incomes.length ? importedState.incomes : structuredClone(defaultState.incomes),
+        expenses: Array.isArray(importedState.expenses) && importedState.expenses.length ? importedState.expenses : structuredClone(defaultState.expenses),
+        categories: normalizeCategories(importedState.categories),
+      };
+
+      saveState();
+      render();
+      backupHintOutput.textContent = "Backup erfolgreich importiert.";
+    } catch (error) {
+      backupHintOutput.textContent = "Die Datei konnte nicht gelesen werden. Bitte nutze eine gueltige Backup-Datei.";
+    }
+  };
+
+  reader.readAsText(file);
+}
+
 function formatCurrency(value) {
   return new Intl.NumberFormat("de-DE", {
     style: "currency",
     currency: "EUR",
   }).format(value);
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return "Noch kein Backup gespeichert.";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Letztes Backup: Unbekannt";
+  }
+
+  return "Letztes Backup: " + new Intl.DateTimeFormat("de-DE", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 }
 
 function sanitizeAmount(value) {
@@ -305,6 +393,10 @@ function renderAllocationGrid(availableBudget) {
   });
 }
 
+function renderBackupStatus() {
+  backupStatusOutput.textContent = formatDateTime(state.lastBackupAt);
+}
+
 function render() {
   personNameInput.value = state.personName;
   monthNameInput.value = state.monthName;
@@ -313,6 +405,7 @@ function render() {
   renderEntries("incomes", incomeList);
   renderEntries("expenses", expenseList);
   renderCategories();
+  renderBackupStatus();
   renderSummary();
 }
 
@@ -350,6 +443,15 @@ addExpenseBtn.addEventListener("click", () => {
   state.expenses.push({ label: "", amount: 0 });
   saveState();
   render();
+});
+
+exportBtn.addEventListener("click", () => {
+  downloadBackup();
+});
+
+importFileInput.addEventListener("change", (event) => {
+  importBackupFile(event.target.files[0]);
+  event.target.value = "";
 });
 
 render();
