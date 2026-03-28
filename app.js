@@ -19,6 +19,9 @@ const defaultState = {
     { label: "Miete", amount: 0 },
     { label: "Strom / Internet", amount: 0 },
   ],
+  upcomingPayments: [
+    { label: "PayPal 30 Tage spaeter", amount: 0, dueDate: "", paid: false },
+  ],
   categories: structuredClone(defaultCategories),
 };
 
@@ -29,13 +32,16 @@ const bufferPercentInput = document.querySelector("#bufferPercent");
 const incomeList = document.querySelector("#incomeList");
 const expenseList = document.querySelector("#expenseList");
 const categoryList = document.querySelector("#categoryList");
+const upcomingPaymentList = document.querySelector("#upcomingPaymentList");
 const addIncomeBtn = document.querySelector("#addIncomeBtn");
 const addExpenseBtn = document.querySelector("#addExpenseBtn");
+const addUpcomingPaymentBtn = document.querySelector("#addUpcomingPaymentBtn");
 const exportBtn = document.querySelector("#exportBtn");
 const importFileInput = document.querySelector("#importFile");
 const entryTemplate = document.querySelector("#entryTemplate");
 const categoryTemplate = document.querySelector("#categoryTemplate");
 const allocationTemplate = document.querySelector("#allocationTemplate");
+const upcomingPaymentTemplate = document.querySelector("#upcomingPaymentTemplate");
 
 const totalIncomeOutput = document.querySelector("#totalIncome");
 const totalExpensesOutput = document.querySelector("#totalExpenses");
@@ -53,6 +59,10 @@ const allocationHintOutput = document.querySelector("#allocationHint");
 const debtReductionOutput = document.querySelector("#debtReduction");
 const monthsToZeroOutput = document.querySelector("#monthsToZero");
 const stabilityHintOutput = document.querySelector("#stabilityHint");
+const openUpcomingTotalOutput = document.querySelector("#openUpcomingTotal");
+const dueSoonTotalOutput = document.querySelector("#dueSoonTotal");
+const projectedAfterUpcomingOutput = document.querySelector("#projectedAfterUpcoming");
+const upcomingHintOutput = document.querySelector("#upcomingHint");
 const backupHintOutput = document.querySelector("#backupHint");
 const backupStatusOutput = document.querySelector("#backupStatus");
 
@@ -74,6 +84,7 @@ function loadState() {
       bufferPercent: Number.isFinite(Number(parsed.bufferPercent)) ? Number(parsed.bufferPercent) : 10,
       incomes: Array.isArray(parsed.incomes) && parsed.incomes.length ? parsed.incomes : structuredClone(defaultState.incomes),
       expenses: Array.isArray(parsed.expenses) && parsed.expenses.length ? parsed.expenses : structuredClone(defaultState.expenses),
+      upcomingPayments: normalizeUpcomingPayments(parsed.upcomingPayments),
       categories: normalizeCategories(parsed.categories),
     };
   } catch (error) {
@@ -93,6 +104,19 @@ function normalizeCategories(categories) {
       percent: savedCategory ? sanitizeAmount(savedCategory.percent) : category.percent,
     };
   });
+}
+
+function normalizeUpcomingPayments(payments) {
+  if (!Array.isArray(payments) || !payments.length) {
+    return structuredClone(defaultState.upcomingPayments);
+  }
+
+  return payments.map((payment) => ({
+    label: payment && payment.label ? payment.label : "",
+    amount: sanitizeAmount(payment && payment.amount),
+    dueDate: payment && payment.dueDate ? payment.dueDate : "",
+    paid: Boolean(payment && payment.paid),
+  }));
 }
 
 function saveState() {
@@ -151,6 +175,7 @@ function importBackupFile(file) {
         bufferPercent: Number.isFinite(Number(importedState.bufferPercent)) ? Number(importedState.bufferPercent) : 10,
         incomes: Array.isArray(importedState.incomes) && importedState.incomes.length ? importedState.incomes : structuredClone(defaultState.incomes),
         expenses: Array.isArray(importedState.expenses) && importedState.expenses.length ? importedState.expenses : structuredClone(defaultState.expenses),
+        upcomingPayments: normalizeUpcomingPayments(importedState.upcomingPayments),
         categories: normalizeCategories(importedState.categories),
       };
 
@@ -261,11 +286,87 @@ function createCategoryRow(category, index, availableBudget) {
   return row;
 }
 
+function createUpcomingPaymentRow(item, index) {
+  const fragment = upcomingPaymentTemplate.content.cloneNode(true);
+  const row = fragment.querySelector(".upcoming-row");
+  const labelInput = fragment.querySelector('[data-role="label"]');
+  const amountInput = fragment.querySelector('[data-role="amount"]');
+  const dueDateInput = fragment.querySelector('[data-role="due-date"]');
+  const paidInput = fragment.querySelector('[data-role="paid"]');
+  const removeButton = fragment.querySelector('[data-role="remove"]');
+
+  if (item.paid) {
+    row.classList.add("is-paid");
+  }
+
+  labelInput.value = item.label;
+  amountInput.value = item.amount || "";
+  dueDateInput.value = item.dueDate || "";
+  paidInput.checked = Boolean(item.paid);
+
+  labelInput.addEventListener("input", (event) => {
+    state.upcomingPayments[index].label = event.target.value;
+    saveState();
+  });
+
+  amountInput.addEventListener("input", (event) => {
+    state.upcomingPayments[index].amount = sanitizeAmount(event.target.value);
+    saveState();
+    renderSummary();
+  });
+
+  dueDateInput.addEventListener("input", (event) => {
+    state.upcomingPayments[index].dueDate = event.target.value;
+    saveState();
+    renderSummary();
+  });
+
+  paidInput.addEventListener("change", (event) => {
+    state.upcomingPayments[index].paid = event.target.checked;
+    saveState();
+    render();
+  });
+
+  removeButton.addEventListener("click", () => {
+    if (state.upcomingPayments.length === 1) {
+      state.upcomingPayments[0] = { label: "", amount: 0, dueDate: "", paid: false };
+    } else {
+      state.upcomingPayments.splice(index, 1);
+    }
+
+    saveState();
+    render();
+  });
+
+  return row;
+}
+
 function renderEntries(type, container) {
   container.innerHTML = "";
   state[type].forEach((item, index) => {
     container.appendChild(createEntryRow(type, item, index));
   });
+}
+
+function renderUpcomingPayments() {
+  upcomingPaymentList.innerHTML = "";
+  state.upcomingPayments.forEach((item, index) => {
+    upcomingPaymentList.appendChild(createUpcomingPaymentRow(item, index));
+  });
+}
+
+function normalizeDateStart(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value + "T00:00:00");
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  date.setHours(0, 0, 0, 0);
+  return date;
 }
 
 function calculateBudget() {
@@ -278,6 +379,34 @@ function calculateBudget() {
   const projectedBalance = currentBalance + remainingBudget;
   const debtReduction = currentBalance < 0 && remainingBudget > 0 ? Math.min(remainingBudget, Math.abs(currentBalance)) : 0;
   const monthsToZero = currentBalance < 0 && remainingBudget > 0 ? Math.ceil(Math.abs(currentBalance) / remainingBudget) : null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const thirtyDaysFromNow = new Date(today);
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+  const openUpcomingPayments = state.upcomingPayments.filter((payment) => !payment.paid);
+  const openUpcomingTotal = openUpcomingPayments.reduce((sum, payment) => sum + sanitizeAmount(payment.amount), 0);
+  const dueSoonTotal = openUpcomingPayments.reduce((sum, payment) => {
+    const dueDate = normalizeDateStart(payment.dueDate);
+    if (!dueDate) {
+      return sum;
+    }
+
+    if (dueDate <= thirtyDaysFromNow) {
+      return sum + sanitizeAmount(payment.amount);
+    }
+
+    return sum;
+  }, 0);
+  const overdueTotal = openUpcomingPayments.reduce((sum, payment) => {
+    const dueDate = normalizeDateStart(payment.dueDate);
+    if (!dueDate) {
+      return sum;
+    }
+
+    return dueDate < today ? sum + sanitizeAmount(payment.amount) : sum;
+  }, 0);
+  const projectedAfterUpcoming = projectedBalance - dueSoonTotal;
 
   return {
     totalIncome,
@@ -287,8 +416,12 @@ function calculateBudget() {
     availableBudget,
     currentBalance,
     projectedBalance,
+    projectedAfterUpcoming,
     debtReduction,
     monthsToZero,
+    openUpcomingTotal,
+    dueSoonTotal,
+    overdueTotal,
   };
 }
 
@@ -309,8 +442,12 @@ function renderSummary() {
     availableBudget,
     currentBalance,
     projectedBalance,
+    projectedAfterUpcoming,
     debtReduction,
     monthsToZero,
+    openUpcomingTotal,
+    dueSoonTotal,
+    overdueTotal,
   } = calculateBudget();
   const foodCategory = state.categories.find((category) => category.key === "food");
   const foodPercent = foodCategory ? sanitizeAmount(foodCategory.percent) : 0;
@@ -327,6 +464,9 @@ function renderSummary() {
   remainingBudgetOutput.textContent = formatCurrency(remainingBudget);
   balanceNowOutput.textContent = formatCurrency(currentBalance);
   projectedBalanceOutput.textContent = formatCurrency(projectedBalance);
+  openUpcomingTotalOutput.textContent = formatCurrency(openUpcomingTotal);
+  dueSoonTotalOutput.textContent = formatCurrency(dueSoonTotal);
+  projectedAfterUpcomingOutput.textContent = formatCurrency(projectedAfterUpcoming);
   foodMonthlyOutput.textContent = formatCurrency(availableForFood);
   foodWeeklyOutput.textContent = formatCurrency(availableForFood / 4.33);
   foodDailyOutput.textContent = formatCurrency(availableForFood / 30);
@@ -359,6 +499,16 @@ function renderSummary() {
     stabilityHintOutput.textContent = "Dein Kontostand ist nicht im Minus und dein Plan bleibt positiv. Damit kannst du schrittweise Puffer aufbauen.";
   } else {
     stabilityHintOutput.textContent = "Aktuell ist dein Plan sehr eng. Schon kleine Einsparungen bei festen Kosten koennen dir wieder Spielraum verschaffen.";
+  }
+
+  if (dueSoonTotal > 0 && overdueTotal > 0) {
+    upcomingHintOutput.textContent = "Davon sind " + formatCurrency(overdueTotal) + " bereits ueberfaellig. Diese offenen Spaeter-Zahlen solltest du besonders im Blick behalten.";
+  } else if (dueSoonTotal > 0) {
+    upcomingHintOutput.textContent = "In den naechsten 30 Tagen werden " + formatCurrency(dueSoonTotal) + " faellig. Dieser Betrag ist im Wert 'Stand nach faelligen Zahlungen' bereits abgezogen.";
+  } else if (openUpcomingTotal > 0) {
+    upcomingHintOutput.textContent = "Es gibt offene Spaeter-Zahlen, aber aktuell ist in den naechsten 30 Tagen noch nichts faellig.";
+  } else {
+    upcomingHintOutput.textContent = "Aktuell sind keine offenen Spaeter-Zahlen eingetragen.";
   }
 }
 
@@ -423,6 +573,7 @@ function render() {
   bufferPercentInput.value = state.bufferPercent;
   renderEntries("incomes", incomeList);
   renderEntries("expenses", expenseList);
+  renderUpcomingPayments();
   renderCategories();
   renderBackupStatus();
   renderSummary();
@@ -460,6 +611,12 @@ addIncomeBtn.addEventListener("click", () => {
 
 addExpenseBtn.addEventListener("click", () => {
   state.expenses.push({ label: "", amount: 0 });
+  saveState();
+  render();
+});
+
+addUpcomingPaymentBtn.addEventListener("click", () => {
+  state.upcomingPayments.push({ label: "", amount: 0, dueDate: "", paid: false });
   saveState();
   render();
 });
